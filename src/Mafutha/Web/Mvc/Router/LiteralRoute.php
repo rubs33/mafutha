@@ -3,6 +3,7 @@ namespace Mafutha\Web\Mvc\Router;
 
 /**
  * Literal Route
+ *
  * @author Rubens Takiguti Ribeiro <rubs33@gmail.com>
  */
 class LiteralRoute extends AbstractRoute
@@ -21,6 +22,7 @@ class LiteralRoute extends AbstractRoute
 
     /**
      * {@inheritdoc}
+     *
      * @param array $options
      * @return string
      */

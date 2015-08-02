@@ -2,7 +2,7 @@
 namespace Mafutha;
 
 /**
- * Abstract Application is responsable to:
+ * Abstract Application is responsible for:
  * - bootstrap environment (load config, register error/exception handler, etc.);
  * - dispatch apropriate controller/action.
  * @author Rubens Takiguti Ribeiro <rubs33@gmail.com>
@@ -17,14 +17,16 @@ abstract class AbstractApplication
 
     /**
      * Application config
+     *
      * @var array
      */
     protected $config;
 
     /**
      * Bootstrap application
+     *
      * @param array $config
-     * @return self
+     * @return $this
      */
     public function bootstrap(array $config)
     {
@@ -39,7 +41,8 @@ abstract class AbstractApplication
 
     /**
      * Register error handler
-     * @return self
+     *
+     * @return $this
      */
     protected function registerErrorHandler()
     {
@@ -63,7 +66,8 @@ abstract class AbstractApplication
 
     /**
      * Register exception handler
-     * @return self
+     *
+     * @return $this
      */
     protected function registerExceptionHandler()
     {
@@ -84,7 +88,9 @@ abstract class AbstractApplication
 
     /**
      * Configure error_reporting and enable/disable showing errors
-     * @return self
+     * based on config
+     *
+     * @return $this
      */
     protected function configureErrorControl()
     {
@@ -105,7 +111,8 @@ abstract class AbstractApplication
 
     /**
      * Run the application
-     * @return int Exit status
+     *
+     * @return int Exit status (AbstractApplication::STATUS_... constants)
      */
     abstract public function run();
 
