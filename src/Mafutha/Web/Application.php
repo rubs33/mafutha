@@ -115,6 +115,7 @@ class Application extends \Mafutha\AbstractApplication
 
 //TODO debug
 $this->response->getBody()->write(sprintf('<p>Time: %0.7f</p>', $this->finishTime - $_SERVER['REQUEST_TIME_FLOAT']));
+$this->response->getBody()->write(sprintf('<p>Memory: %0.2fM</p>', memory_get_peak_usage(true) / (1024 * 1024)));
 $this->response->getBody()->write(sprintf('<p>Included files: %d</p>', count(get_included_files())));
 $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>', var_export(get_included_files(), true)));
 

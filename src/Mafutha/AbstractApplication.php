@@ -108,6 +108,11 @@ abstract class AbstractApplication
         return $this;
     }
 
+    /**
+     * Assert that the Environment is ready to run the application
+     *
+     * @return void
+     */
     protected function assertEnvironment()
     {
         if (!assert_options(ASSERT_ACTIVE)) {
