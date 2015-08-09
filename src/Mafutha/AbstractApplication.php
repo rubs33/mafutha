@@ -14,6 +14,7 @@ abstract class AbstractApplication
      */
     const STATUS_SUCCESS          = 0;
     const STATUS_ACTION_NOT_FOUND = 1;
+    const STATUS_ERROR            = 2;
 
     /**
      * Application config
@@ -34,7 +35,8 @@ abstract class AbstractApplication
 
         $this->registerErrorHandler()
             ->registerExceptionHandler()
-            ->configureErrorControl();
+            ->configureErrorControl()
+            ->assertEnvironment();
 
         return $this;
     }
@@ -76,13 +78,7 @@ abstract class AbstractApplication
                 sprintf('is_callable(%s)', var_export($this->config['exception_handler'], true)),
                 'Exception handler must be callable'
             );
-            $exceptionHandler = &$this->config['exception_handler'];
-        } else {
-            $exceptionHandler = function($exception) {
-                var_dump($exception);
-            };
         }
-        set_exception_handler($exceptionHandler);
         return $this;
     }
 
@@ -106,7 +102,37 @@ abstract class AbstractApplication
             assert_options(ASSERT_ACTIVE, 0);
             assert_options(ASSERT_WARNING, 0);
         }
+        if ($this->config['php_error_log_file']) {
+            ini_set('error_log', $this->config['log_dir'] . DIRECTORY_SEPARATOR . $this->config['php_error_log_file']);
+        }
         return $this;
+    }
+
+    protected function assertEnvironment()
+    {
+        if (!assert_options(ASSERT_ACTIVE)) {
+            return;
+        }
+
+        // Cache dir
+        assert(
+            sprintf(
+                'is_dir(%s) && is_writable(%s)',
+                var_export($this->config['cache_dir'], true),
+                var_export($this->config['cache_dir'], true)
+            ),
+            'Cache dir does not exists or it is not writable'
+        );
+
+        // Log dir
+        assert(
+            sprintf(
+                'is_dir(%s) && is_writable(%s)',
+                var_export($this->config['log_dir'], true),
+                var_export($this->config['log_dir'], true)
+            ),
+            'Log dir does not exists or it is not writable'
+        );
     }
 
     /**

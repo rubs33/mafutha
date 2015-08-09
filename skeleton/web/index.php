@@ -11,13 +11,25 @@ require(__DIR__ . '/../../vendor/autoload.php');
 // Register autoload for the classes of this project
 spl_autoload_register(function($class) {
     if (preg_match('#\Example\\\#', $class)) {
-        require_once('../src/' . str_replace('\\', '/', $class) . '.php');
+        $file = 'file://' . __DIR__ . '/../src/' . str_replace('\\', '/', $class) . '.php';
+        if (is_file($file)) {
+            require_once($file);
+        }
     }
 });
 
 // Run the application using the specified config and return the exit status
 exit(
     (new \Mafutha\Web\Application())
-        ->bootstrap(require(__DIR__ . '/../config/config.php'))
+        ->bootstrap(require('file://' . __DIR__ . '/../config/config.php'))
+/*
+// uncomment these lines if you are using PHP_SAPI == fpm-fcgi
+        ->addHook(
+            \Mafutha\Web\Application::AFTER_SEND_RESPONSE,
+            function () {
+                fastcgi_finish_request();
+            }
+        )
+*/
         ->run()
 );

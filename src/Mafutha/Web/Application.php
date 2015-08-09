@@ -12,12 +12,32 @@ namespace Mafutha\Web;
  */
 class Application extends \Mafutha\AbstractApplication
 {
+    use \Mafutha\Behavior\Object\Hook;
+
+    /**
+     * Hook points
+     * (some of them are the same point, but with different names)
+     */
+    const BEFORE_FIND_ROUTE    = 1;
+    const AFTER_FIND_ROUTE     = 2;
+    const BEFORE_CALL_ACTION   = 2;
+    const AFTER_CALL_ACTION    = 3;
+    const BEFORE_SEND_RESPONSE = 3;
+    const AFTER_SEND_RESPONSE  = 4;
+
     /**
      * HTTP request
      *
      * @var \Psr\Http\Message\RequestInterface
      */
     protected $request;
+
+    /**
+     * HTTP response
+     *
+     * @var \Psr\Http\Message\ResponseInterface
+     */
+    protected $response;
 
     /**
      * Router is responsible for load application routes and detect
@@ -30,7 +50,7 @@ class Application extends \Mafutha\AbstractApplication
     /**
      * Route that match the http request by router
      *
-     * @var \Mafutha\Web\Mvc\Router\RouteInterface
+     * @var string
      */
     protected $route;
 
@@ -48,37 +68,72 @@ class Application extends \Mafutha\AbstractApplication
      */
     public function run()
     {
-        $this->loadRouter();
-        $this->loadRequest();
+        try {
+            $this->executeHook(self::BEFORE_FIND_ROUTE);
 
-        $this->route = $this->router->findRoute($this->request);
-        if ($this->route === null) {
-            //TODO show 404
-            return self::STATUS_ACTION_NOT_FOUND;
+            $this->loadRouter();
+            $this->loadRequest();
+            $this->loadResponse();
+
+            $this->route = $this->router->findRoute($this->request);
+
+            $this->executeHook(self::BEFORE_CALL_ACTION);
+
+            if (!$this->route) {
+                throw new \Mafutha\Web\Mvc\Router\RouteNotFoundException($this->request);
+            }
+            $this->callAction($this->route['controller'], $this->route['action']);
+            $exitStatus = self::STATUS_SUCCESS;
+        } catch (\Mafutha\Web\Mvc\Router\RouteNotFoundException $exception) {
+            $this->route['controller']          = $this->router->normalizeController($this->config['not_found_route']['controller']);
+            $this->route['action']              = $this->router->normalizeAction($this->config['not_found_route']['action']);
+            $this->route['params']['exception'] = $exception;
+
+            $this->response->withStatus(404);
+            if (isset($this->config['exception_handler'])) {
+                call_user_func($this->config['exception_handler'], $exception, $this->response);
+            }
+            $this->callAction($this->route['controller'], $this->route['action']);
+            $exitStatus = self::STATUS_ACTION_NOT_FOUND;
+        } catch (\Exception $exception) {
+            $this->route['controller']            = $this->router->normalizeController($this->config['error_route']['controller']);
+            $this->route['action']                = $this->router->normalizeAction($this->config['error_route']['action']);
+            $this->route['params']['exception']   = $exception;
+            $this->route['params']['show_errors'] = $this->config['show_errors'];
+
+            $this->response->withStatus(503);
+            if (isset($this->config['exception_handler'])) {
+                call_user_func($this->config['exception_handler'], $exception, $this->response);
+            }
+            $this->callAction($this->route['controller'], $this->route['action']);
+            $exitStatus = self::STATUS_ERROR;
+        } finally {
+            $this->finishTime = microtime(true);
         }
 
-        $this->callAction();
+        $this->executeHook(self::BEFORE_SEND_RESPONSE);
 
-        $this->finishTime = microtime(true);
-#debug
-printf('<p>Time: %0.7f</p>', $this->finishTime - $_SERVER['REQUEST_TIME_FLOAT']);
-printf('<p>Included files: %d</p>', count(get_included_files()));
+//TODO debug
+$this->response->getBody()->write(sprintf('<p>Time: %0.7f</p>', $this->finishTime - $_SERVER['REQUEST_TIME_FLOAT']));
+$this->response->getBody()->write(sprintf('<p>Included files: %d</p>', count(get_included_files())));
+$this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>', var_export(get_included_files(), true)));
 
-        return self::STATUS_SUCCESS;
+        $this->sendResponse();
+
+        $this->executeHook(self::AFTER_SEND_RESPONSE);
+
+        return $exitStatus;
     }
 
     /**
-     * Call the action's route
+     * Call the specific controller/action
      *
+     * @param string $controllerClass
+     * @param string $actionMethod
      * @return void
      */
-    public function callAction()
+    protected function callAction($controllerClass, $actionMethod)
     {
-        $controllerClass = $this->route->getDefaults()['controller'];
-        $actionMethod    = $this->route->getDefaults()['action'];
-
-        $this->normalizeControllerAction($controllerClass, $actionMethod);
-
         // Assert Controller
         assert(
             sprintf(
@@ -86,7 +141,7 @@ printf('<p>Included files: %d</p>', count(get_included_files()));
                 var_export($controllerClass, true),
                 var_export(\Mafutha\Web\Mvc\Controller\AbstractController::class, true)
             ),
-            'Controller must be an instanceof ' . \Mafutha\Web\Mvc\Controller\AbstractController::class
+            'Controller must be an instance of ' . \Mafutha\Web\Mvc\Controller\AbstractController::class
         );
 
         // Assert Action
@@ -102,42 +157,9 @@ printf('<p>Included files: %d</p>', count(get_included_files()));
         // Create controller and call action
         $controller = new $controllerClass();
         $controller->setRequest($this->request);
+        $controller->setResponse($this->response);
         $controller->setRoute($this->route);
         call_user_func([$controller, $actionMethod]);
-    }
-
-    /**
-     * Normalize controller class by adding the namespace and the "Controller" suffix.
-     * Normalize action method by adding the "Action" suffix.
-     *
-     * @param string $controllerClass
-     * @param string $actionMethod
-     * @return void
-     */
-    protected function normalizeControllerAction(&$controllerClass, &$actionMethod)
-    {
-        if (substr($controllerClass, 0, 1) !== '\\') {
-            $controllerClass = $this->config['controller_namespace'] . $controllerClass;
-        }
-        if (substr_compare($controllerClass, 'Controller', -10, 10) !== 0) {
-            $controllerClass .= 'Controller';
-        }
-        if (substr_compare($actionMethod, 'Action', -6, 6) !== 0) {
-            $actionMethod .= 'Action';
-        }
-    }
-
-    /**
-     * Get the Web Router
-     *
-     * @return \Mafutha\Web\Mvc\Router\Router
-     */
-    public function getRouter()
-    {
-        if ($this->router === null) {
-            $this->loadRouter();
-        }
-        return $this->router;
     }
 
     /**
@@ -145,34 +167,44 @@ printf('<p>Included files: %d</p>', count(get_included_files()));
      *
      * @return $this
      */
-    public function loadRouter()
+    protected function loadRouter()
     {
-        $routes = require($this->config['web_routes']);
+        assert(
+            sprintf(
+                'is_file(%s) && is_readable(%s)',
+                var_export($this->config['web_routes'], true),
+                var_export($this->config['web_routes'], true)
+            ),
+            'Directive web_routes must be a readable file in config'
+        );
+
+        $cachedFile = 'file://' . $this->config['cache_dir'] . DIRECTORY_SEPARATOR . 'webRoutes.php';
+        $routes = null;
+        if (is_file($cachedFile)) {
+            if (filemtime($cachedFile) > filemtime($this->config['web_routes'])) {
+                $routes = require($cachedFile);
+            }
+        }
+
+        if (is_null($routes)) {
+            $routerParser = new \Mafutha\Web\Mvc\Router\Parser();
+            $routerParser->parseFile($this->config['web_routes']);
+            $this->addHook(
+                self::AFTER_SEND_RESPONSE,
+                function() use ($routerParser, $cachedFile) {
+                    $routerParser->writeRoutes($cachedFile, true);
+                }
+            );
+            $routes = $routerParser->getRoutes();
+        }
 
         $this->router = new \Mafutha\Web\Mvc\Router\Router();
+        $this->router->setControllerNamespace($this->config['controller_namespace']);
         foreach ($routes as $name => $route) {
-            if (is_array($route)) {
-                $class = sprintf('\\Mafutha\\Web\\Mvc\\Router\\%sRoute', ucfirst($route['type']));
-
-                $route = $class::__set_state(['name' => $name, 'data' => $route]);
-            }
             $this->router->addRoute($name, $route);
         }
 
         return $this;
-    }
-
-    /**
-     * Get the HTTP Request
-     *
-     * @return \Psr\Http\Message\RequestInterface
-     */
-    public function getRequest()
-    {
-        if ($this->request === null) {
-            $this->loadRequest();
-        }
-        return $this->request;
     }
 
     /**
@@ -209,9 +241,35 @@ printf('<p>Included files: %d</p>', count(get_included_files()));
         );
 
         // Set base path of application, to hint router
-        $this->request->setBasePath(parse_url($this->config['base_url'], PHP_URL_PATH));
+        $this->request->setBasePath(parse_url($this->config['web_url'], PHP_URL_PATH));
 
         return $this;
     }
 
+    /**
+     * Load the default HTTP Response
+     *
+     * @return $this
+     */
+    protected function loadResponse()
+    {
+        $this->response = new \GuzzleHttp\Psr7\Response();
+        return $this;
+    }
+
+    /**
+     * Send response to the client
+     *
+     * @return void
+     */
+    protected function sendResponse()
+    {
+        http_response_code($this->response->getStatusCode());
+        foreach ($this->response->getHeaders() as $name => $values) {
+            foreach ($values as $value) {
+                header(sprintf('%s: %s', $name, $value), false);
+            }
+        }
+        echo($this->response->getBody());
+    }
 }

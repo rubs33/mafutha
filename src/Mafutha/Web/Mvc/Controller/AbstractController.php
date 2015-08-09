@@ -16,9 +16,16 @@ abstract class AbstractController
     protected $request;
 
     /**
+     * HTTP response
+     *
+     * @var \Psr\Http\Message\ResponseInterface
+     */
+    protected $response;
+
+    /**
      * Route that matched the controller/action
      *
-     * @var \Mafutha\Web\Mvc\Router\RouteInterface
+     * @var array
      */
     protected $route;
 
@@ -48,12 +55,37 @@ abstract class AbstractController
     }
 
     /**
-     * Set the Route that matched the controller/action
+     * Set the HTTP response
      *
-     * @param \Mafutha\Web\Mvc\Router\RouteInterface $route
+     * @param \Psr\Http\Message\ResponseInterface $response
      * @return $this
      */
-    public function setRoute(\Mafutha\Web\Mvc\Router\RouteInterface $route)
+    public function setResponse(\Psr\Http\Message\ResponseInterface $response)
+    {
+        if (!is_null($this->response)) {
+            throw new \LogicException('The response was already setted');
+        }
+        $this->response = $response;
+        return $this;
+    }
+
+    /**
+     * Get the HTTP response
+     *
+     * @return \Psr\Http\Message\ResponseInterface
+     */
+    public function getResponse()
+    {
+        return $this->response;
+    }
+
+    /**
+     * Set the Route that matched the controller/action
+     *
+     * @param array $route
+     * @return $this
+     */
+    public function setRoute(array $route)
     {
         if (!is_null($this->route)) {
             throw new \LogicException('The route was already setted');
@@ -71,4 +103,5 @@ abstract class AbstractController
     {
         return $this->route;
     }
+
 }

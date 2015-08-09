@@ -1,0 +1,20 @@
+# This file contains an user-friendly routes definitions.
+
+[ROUTES]
+/helloworld(/)                 # {"name":"helloworld","controller":"HelloWorld","action":"show"}
+
+/hello
+    /world(/)                  # {"name":"hello_world","controller":"HelloWorld","action":"show"}
+
+/user
+    (/list(/<page>))(/)        # {"name":"user_list","controller":"User\\List","action":"show","page":"1"}
+    /insert(/<action>)(/)      # {"name":"user_insert","controller":"User\\Insert","action":"form"}
+    /<id>
+        (/show)(/)             # {"name":"user_show","controller":"User\\Show","action":"show"}
+        /edit(/<action>)(/)    # {"name":"user_edit","controller":"User\\Edit","action":"form"}
+        /delete(/<action>)(/)  # {"name":"user_delete","controller":"User\\Delete","action":"form"}
+
+[PARAMS]
+page=\d+
+id=\d+
+action=[a-z\-]+
