@@ -10,6 +10,13 @@ namespace Mafutha\Web\Mvc\Router;
 class Router
 {
     /**
+     * Default URL application
+     *
+     * @var string
+     */
+    protected $webUrlBase = '';
+
+    /**
      * Controller Namespace
      *
      * @var string
@@ -38,6 +45,28 @@ class Router
     protected $routesReferences = null;
 
     /**
+     * Set the base application URL
+     *
+     * @param string $webUrlBase
+     * @return $this
+     */
+    public function setWebUrlBase($webUrlBase)
+    {
+        $this->webUrlBase = $webUrlBase;
+        return $this;
+    }
+
+    /**
+     * Get the base application URL
+     *
+     * @return string
+     */
+    public function getWebUrlBase()
+    {
+        return $this->webUrlBase;
+    }
+
+    /**
      * Set controller namespace
      *
      * @var string $controllerNamespace
@@ -47,6 +76,16 @@ class Router
     {
         $this->controllerNamespace = $controllerNamespace;
         return $this;
+    }
+
+    /**
+     * Get controller namespace
+     *
+     * @return string
+     */
+    public function getControllerNamespace()
+    {
+        return $this->controllerNamespace;
     }
 
     /**
@@ -65,10 +104,10 @@ class Router
     /**
      * Find the route that matches the request
      *
-     * @param \Mafutha\Web\Message\Request $request
+     * @param \Psr\Http\Message\RequestInterface $request
      * @return array|null
      */
-    public function findRoute(\Mafutha\Web\Message\Request $request)
+    public function findRoute(\Psr\Http\Message\RequestInterface $request)
     {
         $this->matchedRoute = [
             'controller' => null,
@@ -87,13 +126,32 @@ class Router
     /**
      * Check wheather a route match with an web request
      *
-     * @param \Mafutha\Web\Message\Request $request
+     * @param \Psr\Http\Message\RequestInterface $request
      * @param array $route
      * @return bool
      */
-    protected function matchRoute(\Mafutha\Web\Message\Request $request, array $route)
+    protected function matchRoute(\Psr\Http\Message\RequestInterface $request, array $route)
     {
-        return $this->matchPath($request->getRelativePath(), $route);
+        return $this->matchPath($this->getRelativePathFromRequest($request), $route);
+    }
+
+    /**
+     * Get the path of the request without the default path of default application url
+     *
+     * @param \Psr\Http\Message\RequestInterface $request
+     * @return string
+     */
+    protected function getRelativePathFromRequest(\Psr\Http\Message\RequestInterface $request)
+    {
+        $requestPath = $request->getUri()->getPath();
+
+        $defaultPath = parse_url($this->webUrlBase, PHP_URL_PATH);
+        $defaultPathLength = strlen($defaultPath);
+
+        if (substr_compare($requestPath, $defaultPath, 0, $defaultPathLength) === 0) {
+            return substr($requestPath, $defaultPathLength);
+        }
+        return $requestPath;
     }
 
     /**
@@ -183,7 +241,7 @@ class Router
             }
         }
 
-        return $this->buildUrlPath($routeName, $route['build'], $params, $route['defaults'], $useOptional, false);
+        return $this->getWebUrlBase() . $this->buildUrlPath($routeName, $route['build'], $params, $route['defaults'], $useOptional, false);
     }
 
     /**

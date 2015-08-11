@@ -201,6 +201,7 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
         }
 
         $this->router = new \Mafutha\Web\Mvc\Router\Router();
+        $this->router->setWebUrlBase($this->config['web_url']);
         $this->router->setControllerNamespace($this->config['controller_namespace']);
         foreach ($routes as $name => $route) {
             $this->router->addRoute($name, $route);
@@ -234,16 +235,13 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
             $_SERVER['QUERY_STRING'] ? '?' . $_SERVER['QUERY_STRING'] : ''
         );
 
-        $this->request = new \Mafutha\Web\Message\Request(
+        $this->request = new \GuzzleHttp\Psr7\Request(
             $_SERVER['REQUEST_METHOD'],
             $url,
             $headers,
             file_get_contents('php://input'),
             substr($_SERVER['SERVER_PROTOCOL'], 5)
         );
-
-        // Set base path of application, to hint router
-        $this->request->setBasePath(parse_url($this->config['web_url'], PHP_URL_PATH));
 
         return $this;
     }
