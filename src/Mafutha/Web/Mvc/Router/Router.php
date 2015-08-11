@@ -17,7 +17,7 @@ class Router
     protected $controllerNamespace = '\\';
 
     /**
-     * List of web routes
+     * List of web routes, build as a tree
      *
      * @var array
      */
@@ -29,6 +29,13 @@ class Router
      * @var array
      */
     protected $matchedRoute = [];
+
+    /**
+     * List of routes references to make easier to find a route in the tree
+     *
+     * @var array
+     */
+    protected $routesReferences = null;
 
     /**
      * Set controller namespace
@@ -59,10 +66,16 @@ class Router
      * Find the route that matches the request
      *
      * @param \Mafutha\Web\Message\Request $request
-     * @return RouteInterface|null
+     * @return array|null
      */
     public function findRoute(\Mafutha\Web\Message\Request $request)
     {
+        $this->matchedRoute = [
+            'controller' => null,
+            'action'     => null,
+            'params'     => [],
+            'path'       => []
+        ];
         foreach ($this->routes as $name => $route) {
             $route['name'] = $name;
             if ($this->matchRoute($request, $route)) {
@@ -78,14 +91,8 @@ class Router
      * @param array $route
      * @return bool
      */
-    public function matchRoute(\Mafutha\Web\Message\Request $request, array $route)
+    protected function matchRoute(\Mafutha\Web\Message\Request $request, array $route)
     {
-        $this->matchedRoute = [
-            'controller' => null,
-            'action' => null,
-            'params' => [],
-            'path' => [],
-        ];
         return $this->matchPath($request->getRelativePath(), $route);
     }
 
@@ -160,23 +167,133 @@ class Router
     /**
      * Build an URL based on a route definition
      *
-     * @param string $route
-     * @param array $params
+     * @param string $routeName Route name
+     * @param array $params Params used to build the URL
+     * @param bool $useOptional Flag to prefer to use optional parts when possible, instead to omit them
      * @return string
      */
-    public function buildUrl($routeName, array $params = [])
+    public function buildUrl($routeName, array $params = [], $useOptional = false)
     {
+        $route = $this->getRouteByName($routeName);
+
+        // Only params that are different from the default are considered here
+        foreach ($params as $param => $value) {
+            if (isset($route['defaults'][$param]) && strval($value) === strval($route['defaults'][$param])) {
+                unset($params[$param]);
+            }
+        }
+
+        return $this->buildUrlPath($routeName, $route['build'], $params, $route['defaults'], $useOptional, false);
+    }
+
+    /**
+     * Build the path of the URL
+     *
+     * @param string $routeName Route name
+     * @param array $parts Path parts
+     * @param array $params Params used to build the URL
+     * @param array $defaults Default values for params
+     * @param bool $useOptional Flag to prefer to use optional parts when possible, instead to omit them
+     * @param bool $isOptional Wheather these parts are optional or not
+     * @return string
+     */
+    protected function buildUrlPath($routeName, array $parts, array $params, array $defaults, $useOptional, $isOptional)
+    {
+        $path = '';
+        $hasUserValue = false;
+        foreach ($parts as $part) {
+            switch ($part['type']) {
+                case 'literal':
+                    $path .= $this->buildUrlPathLiteral($routeName, $part, $params, $defaults, $isOptional);
+                    break;
+                case 'optional':
+                    if ($useOptional || $this->urlPartHasParams($part, $params)) {
+                        $path .= $this->buildUrlPath($routeName, $part['value'], $params, $defaults, $useOptional, true);
+                    }
+                    break;
+            }
+        }
+        return $path;
+    }
+
+    /**
+     * Check wheather the URL part has a param (with value different from default)
+     *
+     * @param array $part
+     * @param array $params
+     * @return bool
+     */
+    protected function urlPartHasParams(array $part, array $params)
+    {
+        foreach ($part['params'] as $param => $format) {
+            if (isset($params[$param])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Build a literal part of the url path
+     *
+     * @param string $routeName Route name
+     * @param array $part Path part
+     * @param array $params Params used to build the URL
+     * @param array $defaults Default values for params
+     * @param bool $isOptional Wheather the part is optional or not
+     * @return array
+     */
+    protected function buildUrlPathLiteral($routeName, array $part, array $params, array $defaults, $isOptional)
+    {
+        $tr = [];
+        foreach ($part['params'] as $param => $defaultValue) {
+            if (isset($params[$param])) {
+                $tr['<' . $param . '>'] = $params[$param];
+            } elseif (isset($defaults[$param])) {
+                $tr['<' . $param . '>'] = $defaults[$param];
+            } elseif (!$isOptional) {
+                throw new \InvalidArgumentException(sprintf('Route "%s" requires param "%s"', $routeName, $param));
+            }
+        }
+        return strtr($part['value'], $tr);
+    }
+
+    /**
+     * Get the route data by its name
+     *
+     * @param string $routeName
+     * @return array
+     */
+    public function getRouteByName($routeName)
+    {
+        if ($this->routesReferences === null) {
+            $this->routesReferences = [];
+            $this->buildRoutesReferences($this->routes);
+        }
+
         assert(
-            sprintf(
-                'array_key_exists(%s, $this->routes)',
-                var_export($routeName, true)
-            ),
-            'Route name must be a valid route.'
+            'array_key_exists($routeName, $this->routesReferences)',
+            'Route name must be in the routes configuration file.'
         );
 
-        $route = $this->routes[$routeName];
+        return $this->routesReferences[$routeName];
+    }
 
-        //TODO
+    /**
+     * Build routes references on demand
+     *
+     * @param array $routes
+     * @return void
+     */
+    protected function buildRoutesReferences(array &$routes)
+    {
+        foreach ($routes as $routeName => $route) {
+            $this->routesReferences[$routeName] = &$routes[$routeName];
+
+            if (isset($route['child_routes']) && $route['child_routes']) {
+                $this->buildRoutesReferences($route['child_routes']);
+            }
+        }
     }
 
     /**

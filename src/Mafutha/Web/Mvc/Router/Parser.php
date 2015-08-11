@@ -204,7 +204,7 @@ EOF;
         ];
 
         $level = $token['indent'];
-        $name = isset($token['name']) ? $token['name'] : 'route' . $this->routeCouter;
+        $name = isset($token['name']) ? $token['name'] : '_route' . $this->routeCouter;
 
         if (preg_match_all('/<(?<param>[^>]+)>/', $token['route'], $matches)) {
             foreach ($matches['param'] as $param) {
@@ -313,7 +313,6 @@ EOF;
         $builder = [];
 
         $builderParts = $this->getRouteParts($strBuilder);
-
         foreach ($builderParts as $buildPart) {
             $strPart = substr($strBuilder, $buildPart['start'], $buildPart['end'] - $buildPart['start']);
 
@@ -348,7 +347,6 @@ EOF;
     protected function getRouteParts($strBuilder)
     {
         $parts = [];
-        $type = 'literal';
         $openBrackets = 0;
         $start = 0;
         $end = 0;
@@ -361,14 +359,13 @@ EOF;
                     if ($openBrackets > 0) {
                         $end += 1;
                     } else {
-                        if ($type == 'literal' && $start != $end) {
+                        if ($start != $end) {
                             $parts[] = [
                                 'type'  => 'literal',
                                 'start' => $start,
                                 'end'   => $end
                             ];
                         }
-                        $type = 'optional';
                         $start = $i + 1;
                         $end = $i + 1;
                     }
@@ -383,11 +380,11 @@ EOF;
                                 'start' => $start,
                                 'end'   => $end
                             ];
-                            $type = 'literal';
                             $start = $i + 1;
                             $end = $i + 1;
+                        } else {
+                            $end += 1;
                         }
-                        $end += 1;
                     } else {
                         throw new \LogicException('Invalid route (unbalanced brackets): ' . $strBuilder);
                     }

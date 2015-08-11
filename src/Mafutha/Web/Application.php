@@ -159,6 +159,7 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
         $controller = new $controllerClass();
         $controller->setRequest($this->request);
         $controller->setResponse($this->response);
+        $controller->setRouter($this->router);
         $controller->setRoute($this->route);
         call_user_func([$controller, $actionMethod]);
     }

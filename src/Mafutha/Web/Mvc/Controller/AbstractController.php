@@ -23,6 +23,13 @@ abstract class AbstractController
     protected $response;
 
     /**
+     * Router object that match requests an build URL
+     *
+     * @var \Mafutha\Web\Mvc\Router\Router
+     */
+    protected $router;
+
+    /**
      * Route that matched the controller/action
      *
      * @var array
@@ -77,6 +84,31 @@ abstract class AbstractController
     public function getResponse()
     {
         return $this->response;
+    }
+
+    /**
+     * Set the Router
+     *
+     * @param \Mafutha\Web\Mvc\Router\Router $router
+     * @return $this
+     */
+    public function setRouter(\Mafutha\Web\Mvc\Router\Router $router)
+    {
+        if (!is_null($this->router)) {
+            throw new \LogicException('The router was already setted');
+        }
+        $this->router = $router;
+        return $this;
+    }
+
+    /**
+     * Get the Router
+     *
+     * @return \Mafutha\Web\Mvc\Router\Router
+     */
+    public function getRouter()
+    {
+        return $this->router;
     }
 
     /**
