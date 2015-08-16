@@ -11,7 +11,7 @@ return [
 
     // Errors
     'error_reporting'   => E_ALL,
-    'show_errors'       => true,
+    'show_errors'       => false,
 #    'error_handler'     => ['\Example\ErrorHandler', 'catchError'],
 #    'exception_handler' => ['\Example\ExceptionHandler', 'catchException'],
     'php_error_log_file' => 'php_error.log',

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace Mafutha;
 
 /**
@@ -29,7 +30,7 @@ abstract class AbstractApplication
      * @param array $config
      * @return $this
      */
-    public function bootstrap(array $config)
+    public function bootstrap(array $config): self
     {
         $this->config = $config;
 
@@ -46,11 +47,11 @@ abstract class AbstractApplication
      *
      * @return $this
      */
-    protected function registerErrorHandler()
+    protected function registerErrorHandler(): self
     {
         if (isset($this->config['error_handler'])) {
             assert(
-                sprintf('is_callable(%s)', var_export($this->config['error_handler'], true)),
+                'is_callable($this->config["error_handler"])',
                 'Error handler must be callable'
             );
             $errorHandler = &$this->config['error_handler'];
@@ -71,11 +72,11 @@ abstract class AbstractApplication
      *
      * @return $this
      */
-    protected function registerExceptionHandler()
+    protected function registerExceptionHandler(): self
     {
         if (isset($this->config['exception_handler'])) {
             assert(
-                sprintf('is_callable(%s)', var_export($this->config['exception_handler'], true)),
+                'is_callable($this->config["exception_handler"])',
                 'Exception handler must be callable'
             );
         }
@@ -88,7 +89,7 @@ abstract class AbstractApplication
      *
      * @return $this
      */
-    protected function configureErrorControl()
+    protected function configureErrorControl(): self
     {
         error_reporting($this->config['error_reporting']);
         if ($this->config['show_errors']) {
@@ -121,21 +122,13 @@ abstract class AbstractApplication
 
         // Cache dir
         assert(
-            sprintf(
-                'is_dir(%s) && is_writable(%s)',
-                var_export($this->config['cache_dir'], true),
-                var_export($this->config['cache_dir'], true)
-            ),
+            'is_dir($this->config["cache_dir"]) && is_writable($this->config["cache_dir"])',
             'Cache dir does not exists or it is not writable'
         );
 
         // Log dir
         assert(
-            sprintf(
-                'is_dir(%s) && is_writable(%s)',
-                var_export($this->config['log_dir'], true),
-                var_export($this->config['log_dir'], true)
-            ),
+            'is_dir($this->config["log_dir"]) && is_writable($this->config["log_dir"])',
             'Log dir does not exists or it is not writable'
         );
     }
@@ -145,6 +138,6 @@ abstract class AbstractApplication
      *
      * @return int Exit status (AbstractApplication::STATUS_... constants)
      */
-    abstract public function run();
+    abstract public function run(): int;
 
 }

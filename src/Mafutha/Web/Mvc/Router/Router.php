@@ -1,5 +1,9 @@
 <?php
+declare(strict_types=1);
 namespace Mafutha\Web\Mvc\Router;
+
+use Psr\Http\Message\RequestInterface;
+use Mafutha\Web\Mvc\Router\RouteNotFoundException;
 
 /**
  * The Router class is responsible for match a web request with a route
@@ -50,7 +54,7 @@ class Router
      * @param string $webUrlBase
      * @return $this
      */
-    public function setWebUrlBase($webUrlBase)
+    public function setWebUrlBase(string $webUrlBase): self
     {
         $this->webUrlBase = $webUrlBase;
         return $this;
@@ -61,7 +65,7 @@ class Router
      *
      * @return string
      */
-    public function getWebUrlBase()
+    public function getWebUrlBase(): string
     {
         return $this->webUrlBase;
     }
@@ -72,7 +76,7 @@ class Router
      * @var string $controllerNamespace
      * @return $this
      */
-    public function setControllerNamespace($controllerNamespace)
+    public function setControllerNamespace(string $controllerNamespace): self
     {
         $this->controllerNamespace = $controllerNamespace;
         return $this;
@@ -83,7 +87,7 @@ class Router
      *
      * @return string
      */
-    public function getControllerNamespace()
+    public function getControllerNamespace(): string
     {
         return $this->controllerNamespace;
     }
@@ -95,7 +99,7 @@ class Router
      * @param array $route
      * @return $this
      */
-    public function addRoute($name, array $route)
+    public function addRoute(string $name, array $route): self
     {
         $this->routes[$name] = $route;
         return $this;
@@ -105,9 +109,9 @@ class Router
      * Find the route that matches the request
      *
      * @param \Psr\Http\Message\RequestInterface $request
-     * @return array|null
+     * @return array
      */
-    public function findRoute(\Psr\Http\Message\RequestInterface $request)
+    public function findRoute(RequestInterface $request): array
     {
         $this->matchedRoute = [
             'controller' => null,
@@ -121,6 +125,7 @@ class Router
                 return $this->matchedRoute;
             }
         }
+        throw new RouteNotFoundException($request);
     }
 
     /**
@@ -130,7 +135,7 @@ class Router
      * @param array $route
      * @return bool
      */
-    protected function matchRoute(\Psr\Http\Message\RequestInterface $request, array $route)
+    protected function matchRoute(RequestInterface $request, array $route): bool
     {
         return $this->matchPath($this->getRelativePathFromRequest($request), $route);
     }
@@ -141,7 +146,7 @@ class Router
      * @param \Psr\Http\Message\RequestInterface $request
      * @return string
      */
-    protected function getRelativePathFromRequest(\Psr\Http\Message\RequestInterface $request)
+    protected function getRelativePathFromRequest(RequestInterface $request): string
     {
         $requestPath = $request->getUri()->getPath();
 
@@ -161,7 +166,7 @@ class Router
      * @param array $route
      * @return bool
      */
-    protected function matchPath($path, array $route)
+    protected function matchPath(string $path, array $route): bool
     {
         if (!preg_match($route['regexp'], $path, $matches)) {
             return false;
@@ -214,7 +219,7 @@ class Router
                     }
                     break;
                 default:
-                    $this->matchedRoute['params'][$key] = isset($matches[$key]) ? $matches[$key] : $value;
+                    $this->matchedRoute['params'][$key] = $matches[$key] ?? $value;
                     break;
             }
         }
@@ -230,7 +235,7 @@ class Router
      * @param bool $useOptional Flag to prefer to use optional parts when possible, instead to omit them
      * @return string
      */
-    public function buildUrl($routeName, array $params = [], $useOptional = false)
+    public function buildUrl(string $routeName, array $params = [], bool $useOptional = false): string
     {
         $route = $this->getRouteByName($routeName);
 
@@ -255,7 +260,7 @@ class Router
      * @param bool $isOptional Wheather these parts are optional or not
      * @return string
      */
-    protected function buildUrlPath($routeName, array $parts, array $params, array $defaults, $useOptional, $isOptional)
+    protected function buildUrlPath(string $routeName, array $parts, array $params, array $defaults, bool $useOptional, bool $isOptional): string
     {
         $path = '';
         $hasUserValue = false;
@@ -281,7 +286,7 @@ class Router
      * @param array $params
      * @return bool
      */
-    protected function urlPartHasParams(array $part, array $params)
+    protected function urlPartHasParams(array $part, array $params): bool
     {
         foreach ($part['params'] as $param => $format) {
             if (isset($params[$param])) {
@@ -301,7 +306,7 @@ class Router
      * @param bool $isOptional Wheather the part is optional or not
      * @return array
      */
-    protected function buildUrlPathLiteral($routeName, array $part, array $params, array $defaults, $isOptional)
+    protected function buildUrlPathLiteral(string $routeName, array $part, array $params, array $defaults, bool $isOptional): array
     {
         $tr = [];
         foreach ($part['params'] as $param => $defaultValue) {
@@ -322,7 +327,7 @@ class Router
      * @param string $routeName
      * @return array
      */
-    public function getRouteByName($routeName)
+    public function getRouteByName(string $routeName): array
     {
         if ($this->routesReferences === null) {
             $this->routesReferences = [];
@@ -360,7 +365,7 @@ class Router
      * @param string $controllerClass
      * @return string
      */
-    public function normalizeController($controllerClass)
+    public function normalizeController(string $controllerClass): string
     {
         if (substr($controllerClass, 0, 1) !== '\\') {
             $controllerClass = $this->controllerNamespace . $controllerClass;
@@ -375,9 +380,9 @@ class Router
      * Normalize action method by adding the "Action" suffix.
      *
      * @param string $actionMethod
-     * @return void
+     * @return string
      */
-    public function normalizeAction($actionMethod)
+    public function normalizeAction(string $actionMethod): string
     {
         if (substr_compare($actionMethod, 'Action', -6, 6) !== 0) {
             $actionMethod .= 'Action';

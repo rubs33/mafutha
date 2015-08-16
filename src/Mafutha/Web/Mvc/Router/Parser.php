@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace Mafutha\Web\Mvc\Router;
 
 /**
@@ -43,7 +44,7 @@ class Parser
      * @param string $inputFile
      * @return void
      */
-    public function parseFile($inputFile)
+    public function parseFile(string $inputFile)
     {
         $this->parseFileTokens($inputFile);
         $this->buildRoutes();
@@ -59,7 +60,7 @@ class Parser
      * @param bool $compress Write the file without unnecessary spaces
      * @return void
      */
-    public function writeRoutes($outputFile, $compress = false)
+    public function writeRoutes(string $outputFile, bool $compress = false)
     {
         if (!$this->routes) {
             throw new \LogicException('No route has been processed');
@@ -88,7 +89,7 @@ EOF;
      *
      * @return array
      */
-    public function getRoutes()
+    public function getRoutes(): array
     {
         return $this->routes;
     }
@@ -99,7 +100,7 @@ EOF;
      * @param string $inputFile
      * @return void
      */
-    protected function parseFileTokens($inputFile)
+    protected function parseFileTokens(string $inputFile)
     {
         $this->tokens = [];
         $this->params = [];
@@ -136,7 +137,7 @@ EOF;
      * @param int $lineNumber
      * @return array
      */
-    protected function parseRoute($rawRoute, $lineNumber)
+    protected function parseRoute(string $rawRoute, int $lineNumber): array
     {
         if (!preg_match('/^(?<indent>\s*)(?<route>[^\s]+)(?:\s+#\s*(?<specs>.*?))?\s*$/', $rawRoute, $matches)) {
             throw new \Exception(sprintf("Invalid route at line %d\nContent: %s", $lineNumber, $rawRoute));
@@ -162,7 +163,7 @@ EOF;
      * @param int $lineNumber
      * @return array
      */
-    protected function parseParam($rawParam, $lineNumber)
+    protected function parseParam(string $rawParam, int $lineNumber): array
     {
         if (!preg_match('/^(?<name>[^=\s]+)\s*=\s*(?<expression>.*?)\s*$/', $rawParam, $matches)) {
             throw new \Exception(sprintf("Invalid param at line %d\nContent: %s", $lineNumber, $rawParam));
@@ -192,7 +193,7 @@ EOF;
      * Build a route from a token
      *
      * @param array $token
-     * @return array
+     * @return void
      */
     protected function buildRoute(array $token)
     {
@@ -204,7 +205,7 @@ EOF;
         ];
 
         $level = $token['indent'];
-        $name = isset($token['name']) ? $token['name'] : '_route' . $this->routeCouter;
+        $name = $token['name'] ?? '_route' . $this->routeCouter;
 
         if (preg_match_all('/<(?<param>[^>]+)>/', $token['route'], $matches)) {
             foreach ($matches['param'] as $param) {
@@ -261,7 +262,8 @@ EOF;
      * @param array $route
      * @return string
      */
-    protected function buildRouteMatcher(array $route) {
+    protected function buildRouteMatcher(array $route): string
+    {
         $regexp = $route['defaults']['route'];
 
         $tr = [
@@ -308,7 +310,7 @@ EOF;
      * @param array $route
      * @return array
      */
-    protected function buildRouteBuilderArray($strBuilder, array $route)
+    protected function buildRouteBuilderArray(string $strBuilder, array $route): array
     {
         $builder = [];
 
@@ -344,7 +346,7 @@ EOF;
      * @param string $strBuilder
      * @return array
      */
-    protected function getRouteParts($strBuilder)
+    protected function getRouteParts(string $strBuilder): array
     {
         $parts = [];
         $openBrackets = 0;
@@ -415,9 +417,9 @@ EOF;
      * @param array $route
      * @return string
      */
-    protected function buildRouteBuilderString(array $route)
+    protected function buildRouteBuilderString(array $route): string
     {
-        return (isset($route['parentRoute']) ? $this->buildRouteBuilderString($route['parentRoute']) : '') .  $route['defaults']['route'];
+        return (isset($route['parentRoute']) ? $this->buildRouteBuilderString($route['parentRoute']) : '') . $route['defaults']['route'];
     }
 
     /**
@@ -426,7 +428,7 @@ EOF;
      * @param array $route
      * @return string
      */
-    protected function getParentRouteBuilder(array $route)
+    protected function getParentRouteBuilder(array $route): string
     {
         if (!isset($route['parentRoute'])) {
             return '';
@@ -441,7 +443,7 @@ EOF;
      * @param array $route
      * @return array
      */
-    protected function getParamsFromRoute($strRoute, array $route)
+    protected function getParamsFromRoute(string $strRoute, array $route): array
     {
         $params = [];
         if (!preg_match_all('#<([^>]+)>#', $strRoute, $matches)) {
@@ -491,7 +493,7 @@ EOF;
      * @param int $indent
      * @return string
      */
-    protected function varExport($var, $compress = false, $indent = 0)
+    protected function varExport($var, bool $compress = false, int $indent = 0): string
     {
         $strIndent = $compress ? '' : str_repeat('    ', $indent);
         $newLine = $compress ? '' : "\n";

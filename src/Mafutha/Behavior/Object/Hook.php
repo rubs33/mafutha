@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 namespace Mafutha\Behavior\Object;
 
 /**
@@ -24,7 +25,7 @@ trait Hook
      * @param bool $prepend Prepend function instead appending it
      * @return $this
      */
-    public function addHook($point, callable $function, $prepend = false)
+    public function addHook(int $point, callable $function, bool $prepend = false): self
     {
         if (!isset($this->hooks[$point])) {
             $this->hooks[$point] = [];
@@ -43,7 +44,7 @@ trait Hook
      * @param int $point Class defined point
      * @return void
      */
-    protected function executeHook($point)
+    protected function executeHook(int $point)
     {
         if (!isset($this->hooks[$point])) {
             return;

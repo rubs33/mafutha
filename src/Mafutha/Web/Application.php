@@ -1,5 +1,19 @@
 <?php
+declare(strict_types=1);
 namespace Mafutha\Web;
+
+use Mafutha\AbstractApplication;
+use Mafutha\Behavior\Object\Hook;
+use Mafutha\Web\Mvc\ {
+    Controller\AbstractController,
+    Router\RouteNotFoundException,
+    Router\Parser as RouterParser,
+    Router\Router
+};
+use GuzzleHttp\Psr7\ {
+    Request,
+    Response
+};
 
 /**
  * The Web Application is responsible for:
@@ -10,9 +24,9 @@ namespace Mafutha\Web;
  *
  * @author Rubens Takiguti Ribeiro <rubs33@gmail.com>
  */
-class Application extends \Mafutha\AbstractApplication
+class Application extends AbstractApplication
 {
-    use \Mafutha\Behavior\Object\Hook;
+    use Hook;
 
     /**
      * Hook points
@@ -66,7 +80,7 @@ class Application extends \Mafutha\AbstractApplication
      *
      * @return int Exit status (AbstractApplication::STATUS_... constants)
      */
-    public function run()
+    public function run(): int
     {
         try {
             $this->executeHook(self::BEFORE_FIND_ROUTE);
@@ -79,12 +93,9 @@ class Application extends \Mafutha\AbstractApplication
 
             $this->executeHook(self::BEFORE_CALL_ACTION);
 
-            if (!$this->route) {
-                throw new \Mafutha\Web\Mvc\Router\RouteNotFoundException($this->request);
-            }
             $this->callAction($this->route['controller'], $this->route['action']);
             $exitStatus = self::STATUS_SUCCESS;
-        } catch (\Mafutha\Web\Mvc\Router\RouteNotFoundException $exception) {
+        } catch (RouteNotFoundException $exception) {
             $this->route['controller']          = $this->router->normalizeController($this->config['not_found_route']['controller']);
             $this->route['action']              = $this->router->normalizeAction($this->config['not_found_route']['action']);
             $this->route['params']['exception'] = $exception;
@@ -95,7 +106,7 @@ class Application extends \Mafutha\AbstractApplication
             }
             $this->callAction($this->route['controller'], $this->route['action']);
             $exitStatus = self::STATUS_ACTION_NOT_FOUND;
-        } catch (\Exception $exception) {
+        } catch (\Throwable $exception) {
             $this->route['controller']            = $this->router->normalizeController($this->config['error_route']['controller']);
             $this->route['action']                = $this->router->normalizeAction($this->config['error_route']['action']);
             $this->route['params']['exception']   = $exception;
@@ -133,25 +144,20 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
      * @param string $actionMethod
      * @return void
      */
-    protected function callAction($controllerClass, $actionMethod)
+    protected function callAction(string $controllerClass, string $actionMethod)
     {
         // Assert Controller
         assert(
             sprintf(
-                '(new \ReflectionClass(%s))->isSubclassOf(%s)',
-                var_export($controllerClass, true),
-                var_export(\Mafutha\Web\Mvc\Controller\AbstractController::class, true)
+                '(new \ReflectionClass($controllerClass))->isSubclassOf(%s)',
+                var_export(AbstractController::class, true)
             ),
-            'Controller must be an instance of ' . \Mafutha\Web\Mvc\Controller\AbstractController::class
+            'Controller must be an instance of ' . AbstractController::class
         );
 
         // Assert Action
         assert(
-            sprintf(
-                '(new \ReflectionClass(%s))->hasMethod(%s)',
-                var_export($controllerClass, true),
-                var_export($actionMethod, true)
-            ),
+            '(new \ReflectionClass($controllerClass))->hasMethod($actionMethod)',
             'Controller must have the "' . $actionMethod . '" method'
         );
 
@@ -169,14 +175,10 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
      *
      * @return $this
      */
-    protected function loadRouter()
+    protected function loadRouter(): self
     {
         assert(
-            sprintf(
-                'is_file(%s) && is_readable(%s)',
-                var_export($this->config['web_routes'], true),
-                var_export($this->config['web_routes'], true)
-            ),
+            'is_file($this->config["web_routes"]) && is_readable($this->config["web_routes"])',
             'Directive web_routes must be a readable file in config'
         );
 
@@ -189,7 +191,7 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
         }
 
         if (is_null($routes)) {
-            $routerParser = new \Mafutha\Web\Mvc\Router\Parser();
+            $routerParser = new RouterParser();
             $routerParser->parseFile($this->config['web_routes']);
             $this->addHook(
                 self::AFTER_SEND_RESPONSE,
@@ -200,7 +202,7 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
             $routes = $routerParser->getRoutes();
         }
 
-        $this->router = new \Mafutha\Web\Mvc\Router\Router();
+        $this->router = new Router();
         $this->router->setWebUrlBase($this->config['web_url']);
         $this->router->setControllerNamespace($this->config['controller_namespace']);
         foreach ($routes as $name => $route) {
@@ -215,7 +217,7 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
      *
      * @return $this
      */
-    protected function loadRequest()
+    protected function loadRequest(): self
     {
         $headers = [];
         foreach ($_SERVER as $key => $value) {
@@ -230,16 +232,16 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
             isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off' ? 'https' : 'http',
             isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] . ':' . $_SERVER['PHP_AUTH_PW'] . '@' : '',
             $_SERVER['HTTP_HOST'],
-            isset($_SERVER['SERVER_PORT']) ? ':' . $_SERVER['SERVER_PORT'] : 80,
+            $_SERVER['SERVER_PORT'] ?? 80,
             $_SERVER['REQUEST_URI'],
             $_SERVER['QUERY_STRING'] ? '?' . $_SERVER['QUERY_STRING'] : ''
         );
 
-        $this->request = new \GuzzleHttp\Psr7\Request(
+        $this->request = new Request(
             $_SERVER['REQUEST_METHOD'],
             $url,
             $headers,
-            file_get_contents('php://input'),
+            fopen('php://input', 'r'),
             substr($_SERVER['SERVER_PROTOCOL'], 5)
         );
 
@@ -251,9 +253,9 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
      *
      * @return $this
      */
-    protected function loadResponse()
+    protected function loadResponse(): self
     {
-        $this->response = new \GuzzleHttp\Psr7\Response();
+        $this->response = new Response();
         return $this;
     }
 

@@ -1,5 +1,8 @@
 <?php
+declare(strict_types=1);
 namespace Mafutha\Web\Mvc\Router;
+
+use \Psr\Http\Message\RequestInterface;
 
 /**
  * This exceptions is used to inform the web application that no route was found
@@ -23,7 +26,7 @@ class RouteNotFoundException extends \Exception
      * @param int $code
      * @param \Exception $previous
      */
-    public function __construct(\Psr\Http\Message\RequestInterface $request, $message = 'Route not found', $code = 0, \Exception $previous = null)
+    public function __construct(RequestInterface $request, string $message = 'Route not found', int $code = 0, \Exception $previous = null)
     {
         $this->request = $request;
         parent::__construct($message, $code, $previous);
