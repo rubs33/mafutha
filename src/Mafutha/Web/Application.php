@@ -157,7 +157,11 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
 
         // Assert Action
         assert(
-            '(new \ReflectionClass($controllerClass))->hasMethod($actionMethod)',
+            sprintf(
+                '(new \ReflectionClass(%s))->hasMethod(%s)',
+                var_export($controllerClass, true),
+                var_export($actionMethod, true)
+            ),
             'Controller must have the "' . $actionMethod . '" method'
         );
 
@@ -185,14 +189,14 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
         $cachedFile = 'file://' . $this->config['cache_dir'] . DIRECTORY_SEPARATOR . 'webRoutes.php';
         $routes = null;
         if (is_file($cachedFile)) {
-            if (filemtime($cachedFile) > filemtime($this->config['web_routes'])) {
+            if (filemtime($cachedFile) > filemtime('file://' . $this->config['web_routes'])) {
                 $routes = require($cachedFile);
             }
         }
 
         if (is_null($routes)) {
             $routerParser = new RouterParser();
-            $routerParser->parseFile($this->config['web_routes']);
+            $routerParser->parseFile('file://' . $this->config['web_routes']);
             $this->addHook(
                 self::AFTER_SEND_RESPONSE,
                 function() use ($routerParser, $cachedFile) {
