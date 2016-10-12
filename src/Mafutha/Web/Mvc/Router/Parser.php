@@ -168,6 +168,7 @@ EOF;
         if (!preg_match('/^(?<name>[^=\s]+)\s*=\s*(?<expression>.*?)\s*$/', $rawParam, $matches)) {
             throw new \Exception(sprintf("Invalid param at line %d\nContent: %s", $lineNumber, $rawParam));
         }
+
         return [
             'name' => $matches['name'],
             'expression' => $matches['expression']
@@ -280,6 +281,7 @@ EOF;
             }
             $regexp = strtr($regexp, $tr);
         }
+
         return $regexp;
     }
 
@@ -433,6 +435,7 @@ EOF;
         if (!isset($route['parentRoute'])) {
             return '';
         }
+
         return $this->getParentRouteBuilder($route['parentRoute']) . $route['parentRoute']['build'];
     }
 
@@ -456,6 +459,7 @@ EOF;
                 $params[$param] = null;
             }
         }
+
         return $params;
     }
 
@@ -502,27 +506,34 @@ EOF;
         if (is_int($var) || is_float($var) || is_bool($var) || is_string($var) || is_null($var)) {
             $code .= var_export($var, true);
         } elseif (is_array($var)) {
+            $size = count($var);
+            $lastKey = end(array_keys($var));
+
             if (empty($var)) {
                 $code .= '[]';
-            } elseif (array_keys($var) === range(0, count($var) - 1)) {
+            } elseif (array_keys($var) === range(0, $size - 1)) {
                 $code .= '[' . $newLine;
-                foreach ($var as $value) {
-                    $code .= $this->varExport($value, $compress, $indent + 1) . ',' . $newLine;
+                foreach ($var as $key => $value) {
+                    $comma = $key === $lastKey ? '' : ',';
+                    $code .= $this->varExport($value, $compress, $indent + 1) . $comma . $newLine;
                 }
                 $code .= $strIndent . ']';
             } else {
                 $code .= '[' . $newLine;
                 foreach ($var as $key => $value) {
+                    $comma = $key == $lastKey ? '' : ',';
                     $code .= sprintf(
-                        '%s => %s,%s',
+                        '%s => %s%s%s',
                         $this->varExport($key, $compress, $indent + 1),
                         ltrim($this->varExport($value, $compress, $indent + 1)),
+                        $comma,
                         $newLine
                     );
                 }
                 $code .= $strIndent . ']';
             }
         }
+
         return $code;
     }
 

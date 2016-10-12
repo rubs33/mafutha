@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace Mafutha\Behavior\Object;
 
 /**
- * Hook trait is responsible for append and execute functions in certain ponts of a class
+ * Hook trait is responsible for append and execute functions in certain points of a class
  *
  * @author Rubens Takiguti Ribeiro <rubs33@gmail.com>
  */

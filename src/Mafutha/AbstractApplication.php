@@ -13,9 +13,9 @@ abstract class AbstractApplication
     /**
      * Exit status
      */
-    const STATUS_SUCCESS          = 0;
-    const STATUS_ACTION_NOT_FOUND = 1;
-    const STATUS_ERROR            = 2;
+    public const STATUS_SUCCESS          = 0;
+    public const STATUS_ACTION_NOT_FOUND = 1;
+    public const STATUS_ERROR            = 2;
 
     /**
      * Application config
@@ -51,7 +51,7 @@ abstract class AbstractApplication
     {
         if (isset($this->config['error_handler'])) {
             assert(
-                'is_callable($this->config["error_handler"])',
+                is_callable($this->config['error_handler']),
                 'Error handler must be callable'
             );
             $errorHandler = &$this->config['error_handler'];
@@ -64,6 +64,7 @@ abstract class AbstractApplication
             };
         }
         set_error_handler($errorHandler);
+
         return $this;
     }
 
@@ -76,10 +77,11 @@ abstract class AbstractApplication
     {
         if (isset($this->config['exception_handler'])) {
             assert(
-                'is_callable($this->config["exception_handler"])',
+                is_callable($this->config['exception_handler']),
                 'Exception handler must be callable'
             );
         }
+
         return $this;
     }
 
@@ -106,6 +108,7 @@ abstract class AbstractApplication
         if ($this->config['php_error_log_file']) {
             ini_set('error_log', $this->config['log_dir'] . DIRECTORY_SEPARATOR . $this->config['php_error_log_file']);
         }
+
         return $this;
     }
 
@@ -122,13 +125,13 @@ abstract class AbstractApplication
 
         // Cache dir
         assert(
-            'is_dir($this->config["cache_dir"]) && is_writable($this->config["cache_dir"])',
+            is_dir($this->config['cache_dir']) && is_writable($this->config['cache_dir']),
             'Cache dir does not exists or it is not writable'
         );
 
         // Log dir
         assert(
-            'is_dir($this->config["log_dir"]) && is_writable($this->config["log_dir"])',
+            is_dir($this->config['log_dir']) && is_writable($this->config['log_dir']),
             'Log dir does not exists or it is not writable'
         );
     }

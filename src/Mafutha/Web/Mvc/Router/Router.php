@@ -57,6 +57,7 @@ class Router
     public function setWebUrlBase(string $webUrlBase): self
     {
         $this->webUrlBase = $webUrlBase;
+
         return $this;
     }
 
@@ -79,6 +80,7 @@ class Router
     public function setControllerNamespace(string $controllerNamespace): self
     {
         $this->controllerNamespace = $controllerNamespace;
+
         return $this;
     }
 
@@ -102,6 +104,7 @@ class Router
     public function addRoute(string $name, array $route): self
     {
         $this->routes[$name] = $route;
+
         return $this;
     }
 
@@ -156,6 +159,7 @@ class Router
         if (substr_compare($requestPath, $defaultPath, 0, $defaultPathLength) === 0) {
             return substr($requestPath, $defaultPathLength);
         }
+
         return $requestPath;
     }
 
@@ -263,7 +267,6 @@ class Router
     protected function buildUrlPath(string $routeName, array $parts, array $params, array $defaults, bool $useOptional, bool $isOptional): string
     {
         $path = '';
-        $hasUserValue = false;
         foreach ($parts as $part) {
             switch ($part['type']) {
                 case 'literal':
@@ -276,6 +279,7 @@ class Router
                     break;
             }
         }
+
         return $path;
     }
 
@@ -318,6 +322,7 @@ class Router
                 throw new \InvalidArgumentException(sprintf('Route "%s" requires param "%s"', $routeName, $param));
             }
         }
+
         return strtr($part['value'], $tr);
     }
 
@@ -335,7 +340,7 @@ class Router
         }
 
         assert(
-            'array_key_exists($routeName, $this->routesReferences)',
+            array_key_exists($routeName, $this->routesReferences),
             'Route name must be in the routes configuration file.'
         );
 
@@ -373,6 +378,7 @@ class Router
         if (substr_compare($controllerClass, 'Controller', -10, 10) !== 0) {
             $controllerClass .= 'Controller';
         }
+
         return $controllerClass;
     }
 
@@ -387,6 +393,7 @@ class Router
         if (substr_compare($actionMethod, 'Action', -6, 6) !== 0) {
             $actionMethod .= 'Action';
         }
+
         return $actionMethod;
     }
 }

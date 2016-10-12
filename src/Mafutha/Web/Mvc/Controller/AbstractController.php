@@ -2,7 +2,10 @@
 declare(strict_types=1);
 namespace Mafutha\Web\Mvc\Controller;
 
-use Psr\Http\Message\ { RequestInterface, ResponseInterface };
+use Psr\Http\Message\ {
+    RequestInterface,
+    ResponseInterface
+};
 use Mafutha\Web\Mvc\Router\Router;
 
 /**
@@ -52,6 +55,7 @@ abstract class AbstractController
             throw new \LogicException('The request was already setted');
         }
         $this->request = $request;
+
         return $this;
     }
 
@@ -77,6 +81,7 @@ abstract class AbstractController
             throw new \LogicException('The response was already setted');
         }
         $this->response = $response;
+
         return $this;
     }
 
@@ -102,6 +107,7 @@ abstract class AbstractController
             throw new \LogicException('The router was already setted');
         }
         $this->router = $router;
+
         return $this;
     }
 
@@ -127,6 +133,7 @@ abstract class AbstractController
             throw new \LogicException('The route was already setted');
         }
         $this->route = $route;
+
         return $this;
     }
 

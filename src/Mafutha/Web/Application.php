@@ -32,12 +32,12 @@ class Application extends AbstractApplication
      * Hook points
      * (some of them are the same point, but with different names)
      */
-    const BEFORE_FIND_ROUTE    = 1;
-    const AFTER_FIND_ROUTE     = 2;
-    const BEFORE_CALL_ACTION   = 2;
-    const AFTER_CALL_ACTION    = 3;
-    const BEFORE_SEND_RESPONSE = 3;
-    const AFTER_SEND_RESPONSE  = 4;
+    public const BEFORE_FIND_ROUTE    = 1;
+    public const AFTER_FIND_ROUTE     = 2;
+    public const BEFORE_CALL_ACTION   = 2;
+    public const AFTER_CALL_ACTION    = 3;
+    public const BEFORE_SEND_RESPONSE = 3;
+    public const AFTER_SEND_RESPONSE  = 4;
 
     /**
      * HTTP request
@@ -148,29 +148,22 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
     {
         // Assert Controller
         assert(
-            sprintf(
-                '(new \ReflectionClass($controllerClass))->isSubclassOf(%s)',
-                var_export(AbstractController::class, true)
-            ),
+            (new \ReflectionClass($controllerClass))->isSubclassOf(AbstractController::class),
             'Controller must be an instance of ' . AbstractController::class
         );
 
         // Assert Action
         assert(
-            sprintf(
-                '(new \ReflectionClass(%s))->hasMethod(%s)',
-                var_export($controllerClass, true),
-                var_export($actionMethod, true)
-            ),
+            (new \ReflectionClass($controllerClass))->hasMethod($actionMethod),
             'Controller must have the "' . $actionMethod . '" method'
         );
 
         // Create controller and call action
         $controller = new $controllerClass();
         $controller->setRequest($this->request);
-        $controller->setResponse($this->response);
-        $controller->setRouter($this->router);
-        $controller->setRoute($this->route);
+            ->setResponse($this->response);
+            ->setRouter($this->router);
+            ->setRoute($this->route);
         call_user_func([$controller, $actionMethod]);
     }
 
@@ -182,7 +175,7 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
     protected function loadRouter(): self
     {
         assert(
-            'is_file($this->config["web_routes"]) && is_readable($this->config["web_routes"])',
+            is_file($this->config['web_routes']) && is_readable($this->config['web_routes']),
             'Directive web_routes must be a readable file in config'
         );
 
@@ -260,6 +253,7 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
     protected function loadResponse(): self
     {
         $this->response = new Response();
+
         return $this;
     }
 
