@@ -353,7 +353,7 @@ class Router
      * @param array $routes
      * @return void
      */
-    protected function buildRoutesReferences(array &$routes)
+    protected function buildRoutesReferences(array &$routes): void
     {
         foreach ($routes as $routeName => $route) {
             $this->routesReferences[$routeName] = &$routes[$routeName];

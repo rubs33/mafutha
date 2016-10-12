@@ -117,7 +117,7 @@ abstract class AbstractApplication
      *
      * @return void
      */
-    protected function assertEnvironment()
+    protected function assertEnvironment(): void
     {
         if (!assert_options(ASSERT_ACTIVE)) {
             return;

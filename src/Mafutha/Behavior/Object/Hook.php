@@ -44,7 +44,7 @@ trait Hook
      * @param int $point Class defined point
      * @return void
      */
-    protected function executeHook(int $point)
+    protected function executeHook(int $point): void
     {
         if (!isset($this->hooks[$point])) {
             return;

@@ -144,7 +144,7 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
      * @param string $actionMethod
      * @return void
      */
-    protected function callAction(string $controllerClass, string $actionMethod)
+    protected function callAction(string $controllerClass, string $actionMethod): void
     {
         // Assert Controller
         assert(
@@ -262,7 +262,7 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
      *
      * @return void
      */
-    protected function sendResponse()
+    protected function sendResponse(): void
     {
         http_response_code($this->response->getStatusCode());
         foreach ($this->response->getHeaders() as $name => $values) {

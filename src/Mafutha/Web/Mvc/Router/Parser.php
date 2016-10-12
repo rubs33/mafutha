@@ -44,7 +44,7 @@ class Parser
      * @param string $inputFile
      * @return void
      */
-    public function parseFile(string $inputFile)
+    public function parseFile(string $inputFile): void
     {
         $this->parseFileTokens($inputFile);
         $this->buildRoutes();
@@ -60,7 +60,7 @@ class Parser
      * @param bool $compress Write the file without unnecessary spaces
      * @return void
      */
-    public function writeRoutes(string $outputFile, bool $compress = false)
+    public function writeRoutes(string $outputFile, bool $compress = false): void
     {
         if (!$this->routes) {
             throw new \LogicException('No route has been processed');
@@ -100,7 +100,7 @@ EOF;
      * @param string $inputFile
      * @return void
      */
-    protected function parseFileTokens(string $inputFile)
+    protected function parseFileTokens(string $inputFile): void
     {
         $this->tokens = [];
         $this->params = [];
@@ -180,7 +180,7 @@ EOF;
      *
      * @return void
      */
-    protected function buildRoutes()
+    protected function buildRoutes(): void
     {
         $this->routes = [];
         $this->routeCouter = 0;
@@ -196,7 +196,7 @@ EOF;
      * @param array $token
      * @return void
      */
-    protected function buildRoute(array $token)
+    protected function buildRoute(array $token): void
     {
         $route = [
             'defaults' => $token,
@@ -247,7 +247,7 @@ EOF;
      * @param array $routes
      * @return void
      */
-    protected function buildRoutesMatcher(array &$routes)
+    protected function buildRoutesMatcher(array &$routes): void
     {
         foreach ($routes as &$route) {
             $route['regexp'] = $this->buildRouteMatcher($route);
@@ -291,7 +291,7 @@ EOF;
      * @param array $routes
      * @return void
      */
-    protected function buildRoutesBuilder(array &$routes)
+    protected function buildRoutesBuilder(array &$routes): void
     {
         foreach ($routes as &$route) {
             if (isset($route['defaults']['name'])) {
@@ -469,7 +469,7 @@ EOF;
      * @param array $routes
      * @return void
      */
-    protected function clearRoutesAux(array &$routes)
+    protected function clearRoutesAux(array &$routes): void
     {
         foreach ($routes as &$route) {
             unset(
@@ -537,5 +537,4 @@ EOF;
 
         return $code;
     }
-
 }
