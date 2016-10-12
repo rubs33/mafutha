@@ -82,12 +82,12 @@ class Application extends AbstractApplication
      */
     public function run(): int
     {
+        $this->loadRouter();
+        $this->loadRequest();
+        $this->loadResponse();
+
         try {
             $this->executeHook(self::BEFORE_FIND_ROUTE);
-
-            $this->loadRouter();
-            $this->loadRequest();
-            $this->loadResponse();
 
             $this->route = $this->router->findRoute($this->request);
 
@@ -160,9 +160,9 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
 
         // Create controller and call action
         $controller = new $controllerClass();
-        $controller->setRequest($this->request);
-            ->setResponse($this->response);
-            ->setRouter($this->router);
+        $controller->setRequest($this->request)
+            ->setResponse($this->response)
+            ->setRouter($this->router)
             ->setRoute($this->route);
         call_user_func([$controller, $actionMethod]);
     }
@@ -231,7 +231,7 @@ $this->response->getBody()->write(sprintf('<p>Included files:</p><pre>%s</pre>',
             $_SERVER['HTTP_HOST'],
             $_SERVER['SERVER_PORT'] ?? 80,
             $_SERVER['REQUEST_URI'],
-            $_SERVER['QUERY_STRING'] ? '?' . $_SERVER['QUERY_STRING'] : ''
+            isset($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : ''
         );
 
         $this->request = new Request(
