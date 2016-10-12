@@ -507,7 +507,8 @@ EOF;
             $code .= var_export($var, true);
         } elseif (is_array($var)) {
             $size = count($var);
-            $lastKey = end(array_keys($var));
+            $keys = array_keys($var);
+            $lastKey = end($keys);
 
             if (empty($var)) {
                 $code .= '[]';
