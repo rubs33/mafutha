@@ -500,7 +500,7 @@ EOF;
     protected function varExport($var, bool $compress = false, int $indent = 0): string
     {
         $strIndent = $compress ? '' : str_repeat('    ', $indent);
-        $newLine = $compress ? '' : "\n";
+        $newLine = $compress ? '' : PHP_EOL;
 
         $code = $strIndent;
         if (is_scalar($var) || is_null($var)) {
