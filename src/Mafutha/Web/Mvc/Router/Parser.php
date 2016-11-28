@@ -503,7 +503,7 @@ EOF;
         $newLine = $compress ? '' : "\n";
 
         $code = $strIndent;
-        if (is_int($var) || is_float($var) || is_bool($var) || is_string($var) || is_null($var)) {
+        if (is_scalar($var) || is_null($var)) {
             $code .= var_export($var, true);
         } elseif (is_array($var)) {
             $size = count($var);
